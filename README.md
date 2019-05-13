@@ -1,3 +1,6 @@
+
+### Create the app
+
 Let's create a hello world project to dockerize
 ```
 mkdir docker-hello-world
@@ -37,6 +40,8 @@ While it's running, I'll open a new terminal and curl to see the output
 curl localhost:3000
 ```
 
+### Dockerize our app
+
 Okay, now let's dockerize this application!
 
 If we think like a server administrator, building a VM, we can get pretty far along,
@@ -73,6 +78,8 @@ Successfully built 9f38484d220f
 You can see that we pulled an image of CentOS, and it looks like we downloaded the "latest"
 version of that image. What does latest mean?
 
+### Let's talk tagging
+
 This is where we should talk about tags for a second.
 
 Tags are a way of associating different versions of an image with something human readable.
@@ -81,7 +88,7 @@ In this case, since we didn't ask for a specific tag, we downloaded the "latest"
 Let's take a look at what tags might be available:
 https://hub.docker.com/_/centos
 
-So, rather than using "latest", it's usually better to be specific about the version
+So, rather than using *latest*, it's usually better to be specific about the version
 of the image we want to use as our starting point. Let's add that to our Dockerfile
 
 ```
@@ -129,6 +136,8 @@ COPY . .
 CMD node app.js
 ```
 
+### Testing the app
+
 Now let's try to curl our hello world app!
 ```
 curl localhost:3000
@@ -153,6 +162,8 @@ when running docker:
 ```
 docker run -t -P docker-hello-world:latest
 ```
+
+### Optimizing the container
 
 Okay, it looks like we have a good container... but is it production worthy?
 Let's talk about that... first, let's look at the size of the container:
@@ -210,15 +221,18 @@ CMD node app.js
 ```
 
 Okay, this makes a huge difference. Let's talk about why:
-1) we combine all of our commands into one layer, so we can add and delete and
+- we combine all of our commands into one layer, so we can add and delete and
 recover the space.
-2) since each container is immutable, we don't need to plan to install future
+- since each container is immutable, we don't need to plan to install future
 RPMs, so we can delete the RPMdb, and the yum cache (or all caches, for that matter).
-3) Not a space saver, but when it comes time to copy in our application, and run it,
+- Not a space saver, but when it comes time to copy in our application, and run it,
 we should drop priviledges to a regular user, rather than root. It's just good security practice.
 
 So with all of this optimization, we started at 202MB, and ended at 259MB. It's not bad, but
 what if we could do better? What if we didn't need to start with 202MB?
+
+
+### Use a container specific distribution
 
 There is another distro that is super popular, called Alpine Linux. It's deisgned for containers.
 the starting base image is 3MB. Let's see what it takes to use that image, instead.
@@ -241,6 +255,8 @@ by changing the base image, we simplify the build, and go to a final artifact of
 
 Awesome!
 
+### Pushing to Amazon ECR
+
 Okay, so now what? I can build an image. I can RUN an image, but how do I run it on other machines?
 
 Well, first we need to put the image someplace the other machines can find it...
@@ -248,3 +264,7 @@ Well, first we need to put the image someplace the other machines can find it...
 This is where Amazon ECR comes in to play. ECR is a special artifact store, designed to hold Docker images.
 It's compatible with the docker command line tools, so it's easy to use, but will scale to meet
 your needs, no matter how many images you end up pushing to it.
+
+### Pulling from Amazon ECR to a centos server
+
+### Pulling from Amazon ECR to a really stripped down server that doesn't have nodejs
