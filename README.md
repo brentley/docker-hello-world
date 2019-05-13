@@ -268,3 +268,15 @@ your needs, no matter how many images you end up pushing to it.
 ### Pulling from Amazon ECR to a centos server
 
 ### Pulling from Amazon ECR to a really stripped down server that doesn't have nodejs
+
+### ec2 instance iam profile
+
+### docker login from instance to pull images
+
+### test ro permission to ecr (with docker push)
+
+### --init flag to docker run
+linux behavior when using -P (random port)
+ctrl-c break not killing container
+
+
