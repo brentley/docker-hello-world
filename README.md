@@ -163,6 +163,48 @@ when running docker:
 docker run -t -P docker-hello-world:latest
 ```
 
+### Uh Oh... we kinda messed up...
+In our Dockerfile, we have `COPY . .` and that copies everything from the directory
+into the container. Normally that okay, but in this case, we had built/installed
+Express locally, which installed into `node_modules`. While this worked, it's not
+great design, because I can't always count on those modules being built, or even
+being current.
+
+A better design is to actually build the modules inside the container, so we can
+ensure they are built every time. Also, we should add a .dockerignore file so if
+we have built modules locally, they don't accidentally get copied into the container.
+
+```
+cat <<EOF>.dockerignore
+.git
+.gitignore
+node_modules
+EOF
+```
+Check out the `build context` before and after... we went from sending MBs of data
+to the Docker daemon, to sending KBs of data.
+
+Now that we have excluded `node_modules` we should make sure we build the modules
+inside the container.
+```
+from centos:centos7.6.1810
+
+RUN curl -sL https://rpm.nodesource.com/setup_10.x | bash -
+
+RUN yum install -y nodejs
+
+COPY . .
+
+CMD node app.js
+```
+
+Let's test our change to make sure things still work as expected:
+```
+docker run -t -p 3000:3000 docker-hello-world:latest
+```
+
+
+
 ### Optimizing the container
 
 Okay, it looks like we have a good container... but is it production worthy?
@@ -278,5 +320,3 @@ your needs, no matter how many images you end up pushing to it.
 ### --init flag to docker run
 linux behavior when using -P (random port)
 ctrl-c break not killing container
-
-
