@@ -276,6 +276,48 @@ we should drop priviledges to a regular user, rather than root. It's just good s
 So with all of this optimization, we started at 202MB, and ended at 260MB. It's not bad, but
 what if we could do better? What if we didn't need to start with 202MB?
 
+### Optimizing the build order to take advantage of caching
+
+There is another optimization we can do to optimize how much work needs to be done
+if we change something in the app. Watch what happens if I change a line in app.js
+and then rebuilt the container.
+
+Did you see that it had to rerun the `npm install`? This is because Docker has to
+rerun every command below the first command that has a changed file. That `COPY . .`
+is copying both the `package.json` file and the `app.js` file so even if all I changed
+was the `app.js` file it has to rerun the NPM install.
+
+We can optimize it like this:
+
+```
+from centos:centos7.6.1810
+
+RUN curl -sL https://rpm.nodesource.com/setup_10.x | bash - && \
+  yum install -y nodejs && \
+  adduser -mr nodejs && \
+  rm -rvf /var/lib/rpm /var/cache/*
+
+USER nodejs
+
+WORKDIR /home/nodejs
+
+ADD package.json .
+
+RUN npm install
+
+ADD app.js
+
+EXPOSE 3000
+
+CMD node app.js
+```
+
+Now if I run this build I get an extra layer, but this layer lets Docker cache the
+package.json and the installed dendencies separately from the app code. And
+if I change a line in the `app.js` file and rerun the build you'll see that it is
+able to skip the NPM install because nothing has changed in `package.json`
+
+This is a huge boost to speed and productivity when working with Docker containers
 
 ### Use a container specific distribution
 
