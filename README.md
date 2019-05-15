@@ -311,18 +311,71 @@ Well, first we need to put the image someplace the other machines can find it...
 
 This is where Amazon ECR comes in to play. ECR is a special artifact store, designed to hold Docker images.
 It's compatible with the docker command line tools, so it's easy to use, but will scale to meet
-your needs, no matter how many images you end up pushing to it.
+your needs, without worrying about how many containers you push, or how many clients
+might pull from it.
+
+We'll start by creating a repository in ECR, and following the `push commands`.
+
+
+
+```
+$(aws ecr get-login --no-include-email --region us-east-1)
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text) # this is setting my account ID as a variable
+docker push ${ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/docker-hello-world:latest
+```
 
 ### Pulling from Amazon ECR to a centos server
+Now that we've pushed to our artifact store, we can go to a fresh server, pull the
+image and run it, but first we need to install docker.
+```
+sudo -i
+yum -y install docker
+systemctl start docker.service
+systemctl enable docker.service
 
-### Pulling from Amazon ECR to a really stripped down server that doesn't have nodejs
+$(aws ecr get-login --no-include-email --region us-east-1)
+```
+If this is all we do, we should get an error when trying to log in to ECR.
 
-### ec2 instance iam profile
+This is because we haven't assigned permission to allow ECR usage
+yet. Let's do that now by creating a Read Only IAM role, then assigning it to
+the EC2 instance.
 
-### docker login from instance to pull images
+In reality, the permission we used would likely be merged in to your existing EC2
+instance role, but I'm not using one right now, so I'll create one that can be
+used on any of my instances.
 
-### test ro permission to ecr (with docker push)
+Once we have the IAM role attached, let's test ECR access again:
+```
+$(aws ecr get-login --no-include-email --region us-east-1)
+```
 
-### --init flag to docker run
-linux behavior when using -P (random port)
-ctrl-c break not killing container
+This time, we should be logged in.
+
+Next, let's try to pull our image:
+```
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text) # this is setting my account ID as a variable
+docker pull ${ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/docker-hello-world:latest
+```
+
+Just to validate our ECR permissions, let's attempt to push to the registry...
+With our Read Only permission, this should fail:
+```
+docker push ${ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/docker-hello-world:latest
+```
+
+Now let's see if this server has nodejs installed already:
+```
+which node 2>/dev/null || echo "nodejs is not installed"
+which npm 2> /dev/null || echo "npm is not installed"
+```
+
+So there is no nodejs installed and no npm command either.
+
+### Running our code on a really stripped down server that doesn't have nodejs
+```
+docker run -t -p 3000:3000 ${ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/docker-hello-world:latest
+```
+
+We can test in another shell, and see our app does indeed work! Also, we can verify
+it's not running as root, and is just another process on our OS.
