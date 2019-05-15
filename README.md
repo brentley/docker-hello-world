@@ -334,9 +334,11 @@ USER nodejs
 
 WORKDIR /home/nodejs
 
-COPY . .
+ADD package.json .
 
 RUN npm install
+
+ADD app.js
 
 EXPOSE 3000
 
