@@ -120,7 +120,9 @@ docker build -t docker-hello-world:latest .
 Okay, how do we run our image?
 
 ```
-docker run docker-hello-world:latest
+# --init spawns an init process, then launches our command using the init process
+# -i launches "interactively", rather than forking into the background
+docker run --init -i docker-hello-world:latest
 ```
 
 Notice we get an error. It looks like we need to install NodeJS:
@@ -154,13 +156,13 @@ lsof -Pn -i4 |grep 3000
 If we connect the host port 3000, to the container port 3000, then we should be
 able to connect to our running application:
 ```
-docker run -t -p 3000:3000 docker-hello-world:latest
+docker run --init -i -p 3000:3000 docker-hello-world:latest
 ```
 
 You can also add the EXPOSE command to the Dockerfile, and then use the `-P` option
-when running docker:
+when running docker. This will expose our port to a dynamic/available high port on the host:
 ```
-docker run -t -P docker-hello-world:latest
+docker run --init -i -P docker-hello-world:latest
 ```
 
 ### Uh Oh... we kinda messed up...
@@ -204,7 +206,7 @@ CMD node app.js
 
 Let's test our change to make sure things still work as expected:
 ```
-docker run -t -p 3000:3000 docker-hello-world:latest
+docker run --init -i -p 3000:3000 docker-hello-world:latest
 ```
 
 ### Optimizing the container
@@ -374,7 +376,7 @@ So there is no nodejs installed and no npm command either.
 
 ### Running our code on a really stripped down server that doesn't have nodejs
 ```
-docker run -t -p 3000:3000 ${ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/docker-hello-world:latest
+docker run --init -i -p 3000:3000 ${ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/docker-hello-world:latest
 ```
 
 We can test in another shell, and see our app does indeed work! Also, we can verify
