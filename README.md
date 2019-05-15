@@ -195,6 +195,10 @@ RUN yum install -y nodejs
 
 COPY . .
 
+RUN npm install
+
+EXPOSE 3000
+
 CMD node app.js
 ```
 
@@ -202,8 +206,6 @@ Let's test our change to make sure things still work as expected:
 ```
 docker run -t -p 3000:3000 docker-hello-world:latest
 ```
-
-
 
 ### Optimizing the container
 
@@ -214,15 +216,7 @@ docker images
 ```
 
 How can we make this smaller? More efficient? you see our starting point is 202MB, but we've
-grown this thing to 372MB, and our app code is only
-Okay, it looks like we have a good container... but is it production worthy?
-Let's talk about that... first, let's look at the size of the container:
-```
-docker images
-```
-
-How can we make this smaller? More efficient? you see our starting point is 202MB, but we've
-grown this thing to 372MB, and our app code is only 2.3MB, so how did we add so much extra stuff?
+grown this thing to 373MB, and our app code is only
 
 Let's look at our Dockerfile again:
 ```
@@ -234,14 +228,17 @@ RUN yum install -y nodejs
 
 COPY . .
 
+RUN npm install
+
 EXPOSE 3000
 
 CMD node app.js
 ```
 
-We are really doing 3 things that have a chance to add space... the 3 RUN commands.
-Remember when we talked about layers? Each one of those writes a new layer...
-Ideally, we would do everything we can in a single layer, then clean up stuff we
+We are really doing 4 things that have a chance to add space... the 3 RUN commands,
+plus the copy of our app code into the container. Remember when we talked about
+layers? Each one of those writes a new layer... Ideally, we would do everything
+we can in fewer layers, take advantage of layer caching, then clean up stuff we
 don't need anymore...
 
 What if we did this instead?:
@@ -250,12 +247,16 @@ from centos:centos7.6.1810
 
 RUN curl -sL https://rpm.nodesource.com/setup_10.x | bash - && \
   yum install -y nodejs && \
-  adduser -r nodejs && \
+  adduser -mr nodejs && \
   rm -rvf /var/lib/rpm /var/cache/*
 
 USER nodejs
 
+WORKDIR /home/nodejs
+
 COPY . .
+
+RUN npm install
 
 EXPOSE 3000
 
@@ -270,7 +271,7 @@ RPMs, so we can delete the RPMdb, and the yum cache (or all caches, for that mat
 - Not a space saver, but when it comes time to copy in our application, and run it,
 we should drop priviledges to a regular user, rather than root. It's just good security practice.
 
-So with all of this optimization, we started at 202MB, and ended at 259MB. It's not bad, but
+So with all of this optimization, we started at 202MB, and ended at 260MB. It's not bad, but
 what if we could do better? What if we didn't need to start with 202MB?
 
 
@@ -282,18 +283,23 @@ the starting base image is 3MB. Let's see what it takes to use that image, inste
 ```
 FROM alpine:3.9.4
 
-RUN apk add -U --no-cache nodejs && \
+RUN apk add -U --no-cache nodejs npm && \
   adduser -S nodejs
 
 USER nodejs
 
+WORKDIR /home/nodejs
+
 COPY . .
+
+RUN npm install
 
 EXPOSE 3000
 
 CMD node app.js
+
 ```
-by changing the base image, we simplify the build, and go to a final artifact of 33.5MB.
+by changing the base image, we simplify the build, and go to a final artifact of 49MB.
 
 Awesome!
 

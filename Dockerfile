@@ -1,11 +1,17 @@
-from centos:centos7.6.1810
+FROM alpine:3.9.4
 
-RUN curl -sL https://rpm.nodesource.com/setup_10.x | bash -
+RUN apk add -U --no-cache nodejs npm && \
+  adduser -S nodejs
 
-RUN yum install -y nodejs
+USER nodejs
+
+WORKDIR /home/nodejs
 
 COPY . .
 
 RUN npm install
 
+EXPOSE 3000
+
 CMD node app.js
+
