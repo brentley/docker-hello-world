@@ -305,7 +305,7 @@ ADD package.json .
 
 RUN npm install
 
-ADD app.js
+ADD app.js .
 
 EXPOSE 3000
 
@@ -338,7 +338,7 @@ ADD package.json .
 
 RUN npm install
 
-ADD app.js
+ADD app.js .
 
 EXPOSE 3000
 
