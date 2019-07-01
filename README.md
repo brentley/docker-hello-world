@@ -218,7 +218,7 @@ docker images
 ```
 
 How can we make this smaller? More efficient? you see our starting point is 202MB, but we've
-grown this thing to 373MB, and our app code is only
+grown this thing to 373MB, and our app code is only 2.3MB, so how did we add so much extra stuff?
 
 Let's look at our Dockerfile again:
 ```
