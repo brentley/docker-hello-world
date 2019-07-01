@@ -267,7 +267,10 @@ CMD node app.js
 
 Okay, this makes a huge difference. Let's talk about why:
 - we combine all of our commands into one layer, so we can add and delete and
-recover the space.
+recover the space. (Layers are additive and immutable--if you add stuff in one layer
+and delete it in a different layer, that stuff is still in the earlier layer. This is
+analogous to adding a file in one git commit and deleting it in the next--it is still
+in your git history.)
 - since each container is immutable, we don't need to plan to install future
 RPMs, so we can delete the RPMdb, and the yum cache (or all caches, for that matter).
 - Not a space saver, but when it comes time to copy in our application, and run it,
